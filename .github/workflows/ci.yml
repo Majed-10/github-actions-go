@@ -1,4 +1,4 @@
-name: Build and Run Go Program
+name: Lint and Push
 
 on:
   push:
@@ -6,36 +6,12 @@ on:
       - main
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Step 2: Set up Go environment
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
-
-      # Step 3: Build Go program
-      - name: Build Go program
-        run: |
-          go build hello.go
-
-      # Step 4: Run Go program
-      - name: Run Go program
-        run: |
-          ./hello
-
-  golangci-lint:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       # Step 2: Set up Go environment
@@ -52,4 +28,21 @@ jobs:
 
       # Step 4: Run GolangCI-Lint
       - name: Run GolangCI-Lint
-        run: golangci-lint run
+        run: |
+          golangci-lint run --fix  # The `--fix` option will auto-fix linting issues
+
+      # Step 5: Commit and push if there are changes
+      - name: Commit and push changes if needed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-fix lint issues by GitHub Actions"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
